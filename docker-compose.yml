@@ -1,0 +1,54 @@
+version: '3.8'
+
+services:
+  userservice:
+    image: userservice
+    build:
+      context: .
+      dockerfile: UserService/Dockerfile
+    ports:
+      - "5000:8080"
+    depends_on:
+      - rabbitmq
+    networks:
+      - smartservicehub
+
+  rabbitmq:
+    image: "rabbitmq:management"
+    ports:
+      - "5673:5672"    # RabbitMQ default port
+      - "15672:15672"  # Management console UI
+    networks:
+      - smartservicehub
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+      
+  orderservice:
+    image: orderservice
+    build:
+        context: .
+        dockerfile: OrderService/Dockerfile
+    ports:
+      - "5001:8080"  # Expose port 5001 for OrderService
+    depends_on:
+      - rabbitmq  
+    networks:
+      - smartservicehub
+
+  apigateway:
+    image: apigateway
+    build:
+        context: .
+        dockerfile: ApiGateway/Dockerfile
+    ports:
+      - "7000:8080"  # Expose port 7000 for apiGateway
+    depends_on:
+      - userservice
+      - orderservice 
+    networks:
+      - smartservicehub
+
+networks:
+  smartservicehub:
+    driver: bridge
